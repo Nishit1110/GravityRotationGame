@@ -59,7 +59,7 @@ public class GravityControll : MonoBehaviour
             Debug.Log(location);
             canChangeGravity = true;
         }
-        if (Input.GetKeyDown(KeyCode.LeftControl)) //Apply gravity changes
+        if (Input.GetKeyDown(KeyCode.Return)) //Apply gravity changes
         {
             if (canChangeGravity)
             {
