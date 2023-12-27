@@ -6,6 +6,8 @@ public class Player_Movement : MonoBehaviour
 {
     public GameObject child;
 
+    public float horizontalInputMultiplier;
+
     bool isGrounded;
     Animator animator;
     public float moveSpeed = 5f;
@@ -14,14 +16,6 @@ public class Player_Movement : MonoBehaviour
     public float groundCheckDistance;
 
     private Rigidbody rb;
-    private Transform mainCameraTransform;
-
-    public GameObject CinemachineCameraTarget;
-    public float TopClamp = 70.0f;
-    public float BottomClamp = -30.0f;
-    private float _cinemachineTargetYaw;
-    private float _cinemachineTargetPitch;
-    private const float _threshold = 0.01f;
     public float CameraAngleOverride = 0.0f;
 
     Vector3 movementDirection;
@@ -34,12 +28,10 @@ public class Player_Movement : MonoBehaviour
 
     void Update()
     {
-        //CameraMoov();
         moov();
         Jump();
         Animation();
         isGrounded = GroundCheck();
-
     }
 
     private void moov()
@@ -48,15 +40,11 @@ public class Player_Movement : MonoBehaviour
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
 
-        movementDirection = (child.transform.forward * verticalInput + child.transform.right * horizontalInput).normalized;
+        movementDirection = (child.transform.forward * verticalInput + horizontalInput * horizontalInputMultiplier * child.transform.right).normalized;
 
         rb.AddForce(movementDirection * moveSpeed, ForceMode.Force);
         if (horizontalInput != 0f)
         {
-            /*Debug.Log(horizontalInput);
-            Quaternion toRotation = Quaternion.Euler(0, child.transform.eulerAngles.y + horizontalInput * rotationSpeed, 0);
-            child.transform.rotation = Quaternion.Slerp(child.transform.rotation, toRotation, rotationSpeed * Time.deltaTime);
-        */
             float rotationAmount = horizontalInput * rotationSpeed * Time.deltaTime;
 
             // Apply the rotation to the GameObject around the Y-axis
@@ -75,43 +63,6 @@ public class Player_Movement : MonoBehaviour
         }
     }
 
-   /* private void CameraMoov()
-    {
-        // Get the mouse input for rotation
-        float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
-
-        // if there is an input and camera position is not fixed
-        if (Mathf.Abs(mouseX) >= _threshold)
-        {
-            // Don't multiply mouse input by Time.deltaTime;
-            float deltaTimeMultiplier = 1.0f;
-
-            _cinemachineTargetYaw += mouseX * deltaTimeMultiplier;
-        }
-
-        if (Mathf.Abs(mouseY) >= _threshold)
-        {
-            // Don't multiply mouse input by Time.deltaTime;
-            float deltaTimeMultiplier = 1.0f;
-
-            _cinemachineTargetPitch += mouseY * deltaTimeMultiplier;
-        }
-
-        // clamp our rotations so our values are limited 360 degrees
-        _cinemachineTargetYaw = ClampAngle(_cinemachineTargetYaw, float.MinValue, float.MaxValue);
-        _cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp + transform.eulerAngles.x, TopClamp + transform.eulerAngles.x);
-
-        // Cinemachine will follow this target
-        CinemachineCameraTarget.transform.rotation = Quaternion.Euler(_cinemachineTargetPitch + CameraAngleOverride,
-            _cinemachineTargetYaw, 0.0f);
-    }
-    private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
-    {
-        if (lfAngle < -360f) lfAngle += 360f;
-        if (lfAngle > 360f) lfAngle -= 360f;
-        return Mathf.Clamp(lfAngle, lfMin, lfMax);
-    }*/
     private void Animation()
     {
         if (movementDirection != Vector3.zero)
@@ -138,6 +89,7 @@ public class Player_Movement : MonoBehaviour
         Ray groundRay = new Ray(transform.position + transform.up, -transform.up);
 
         Debug.DrawRay(groundRay.origin, groundRay.direction * groundCheckDistance, Color.yellow);
+        Debug.DrawRay(Camera.main.transform.position, Camera.main.transform.forward * groundCheckDistance, Color.yellow);
 
         // Perform the raycast
         if (Physics.Raycast(groundRay, out RaycastHit hit, groundCheckDistance))
