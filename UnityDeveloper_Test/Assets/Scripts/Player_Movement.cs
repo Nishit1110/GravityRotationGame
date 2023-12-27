@@ -9,17 +9,23 @@ public class Player_Movement : MonoBehaviour
     public float horizontalInputMultiplier;
 
     bool isGrounded;
+
     Animator animator;
+
     public float moveSpeed = 5f;
     public float rotationSpeed = 10f; // Adjust this to control the player rotation speed.
     public float jumpForce;
     public float groundCheckDistance;
+
+    public float checkGroundTimer;
+    public float checkGroundRayDistance;
 
     private Rigidbody rb;
     public float CameraAngleOverride = 0.0f;
 
     Vector3 movementDirection;
 
+    float timer = 0;
     void Start()
     {
         animator = child.GetComponent<Animator>();
@@ -31,11 +37,21 @@ public class Player_Movement : MonoBehaviour
         moov();
         Jump();
         Animation();
+        SpeedControl();
         isGrounded = GroundCheck();
+        if (!isGrounded)
+        {
+            timer += Time.deltaTime;
+            if (timer > checkGroundTimer)
+                anygroundBelow();
+        }
+        else
+            timer = 0;
     }
 
-    private void moov()
+    private void moov() //Moov player on Keyboard input
     {
+        if (!isGrounded) return;
         // Get input axes
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
@@ -50,11 +66,20 @@ public class Player_Movement : MonoBehaviour
             // Apply the rotation to the GameObject around the Y-axis
             child.transform.Rotate(0f, rotationAmount, 0f);
         }
-
-        // Apply the movement as a force to the Rigidbody.
     }
 
-    private void Jump()
+    void SpeedControl() //Limits player's speed to constant
+    {
+        Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+
+        if (flatVel.magnitude > moveSpeed)
+        {
+            Vector3 limitedVel = flatVel.normalized * moveSpeed;
+            rb.velocity = new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
+        }
+    }
+
+    private void Jump() //Perform Jump on space bar
     {
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
@@ -63,7 +88,7 @@ public class Player_Movement : MonoBehaviour
         }
     }
 
-    private void Animation()
+    private void Animation() //Control movement and air animation
     {
         if (movementDirection != Vector3.zero)
         {
@@ -88,9 +113,6 @@ public class Player_Movement : MonoBehaviour
         // Cast a ray from the player's position towards the ground
         Ray groundRay = new Ray(transform.position + transform.up, -transform.up);
 
-        Debug.DrawRay(groundRay.origin, groundRay.direction * groundCheckDistance, Color.yellow);
-        Debug.DrawRay(Camera.main.transform.position, Camera.main.transform.forward * groundCheckDistance, Color.yellow);
-
         // Perform the raycast
         if (Physics.Raycast(groundRay, out RaycastHit hit, groundCheckDistance))
         {
@@ -102,5 +124,17 @@ public class Player_Movement : MonoBehaviour
         }
 
         return false; // Player is not grounded
+    }
+
+    void anygroundBelow() //player will fall on ground or not
+    {
+        Ray anyGround = new Ray(transform.position + transform.up, -transform.up);
+
+        // Perform the raycast
+        if (Physics.Raycast(anyGround, out RaycastHit hit, checkGroundRayDistance))
+            timer = 0;
+        
+        else
+            GameManager.Instance.GameOver(false);
     }
 }
