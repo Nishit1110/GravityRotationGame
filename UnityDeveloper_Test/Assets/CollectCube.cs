@@ -8,8 +8,7 @@ public class CollectCube : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            GameManager.Instance.points++;
-            Debug.Log(GameManager.Instance.points);
+            GameManager.Instance.IncreamentScore();
             Destroy(gameObject);
         }
     }
